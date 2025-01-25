@@ -1,4 +1,2 @@
 streamlit
-RamachanDraw
-matplotlib
-#==3.6.2
+numpy
