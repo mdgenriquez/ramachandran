@@ -1,35 +1,35 @@
-import streamlit as st
-import matplotlib.pyplot as plt
-from ramachandraw.parser import get_phi_psi
-from ramachandraw.utils import fetch_pdb 
-from ramachandraw.utils import plot
-from io import BytesIO 
+import numpy as np
 
-st.title("Generador de Diagrama de Ramachandran")
-st.text("Autor: Jesús Alvarado-Huayhuaz")
+def load_monomer(content):
+    """
+    Carga un monómero desde un contenido en formato XYZ.
+    """
+    lines = content.splitlines()
+    atom_count = int(lines[0].strip())
+    structure = lines[2:]  # Ignorar la cabecera
+    return atom_count, structure
 
-st.sidebar.image("ramachandran_logo.png", caption="inRamachandran")
+def construct_polymer(atom_count, structure, n):
+    """
+    Construye un polímero concatenando `n` unidades del monómero.
+    """
+    polymer = []
+    offset = np.array([0.0, 0.0, 0.0])  # Vector inicial de desplazamiento
+    delta = 1.5  # Distancia entre monómeros (ajustable)
 
-pdb_id = st.text_input("Escribe el código PDB de 4 dígitos, por ejemplo: ", "3PL1")
-pdb_file = fetch_pdb(pdb_id)
-plt.figure()
-plot(pdb_file)
+    for i in range(n):
+        for line in structure:
+            atom, x, y, z = line.split()
+            x, y, z = float(x), float(y), float(z)
+            new_position = np.array([x, y, z]) + offset
+            polymer.append(f"{atom} {new_position[0]:.3f} {new_position[1]:.3f} {new_position[2]:.3f}")
+        offset += np.array([delta, 0, 0])  # Incrementar en el eje X
+    return polymer
 
-st.markdown("**Resultado :gift:**")
-st.pyplot(plt.gcf())
-
-# Buffer de memoria para guardar la imagen
-buffer = BytesIO()
-plt.savefig(buffer, format='png')
-buffer.seek(0)  
-
-# Botón de descarga
-st.download_button(
-    label="Descargar imagen",
-    data=buffer,
-    file_name=f"diagrama_ramachandran_{pdb_id}.png",
-    mime="image/png"
-)
-
-st.balloons()
-
+def save_polymer(polymer):
+    """
+    Genera un archivo XYZ en texto para descargar.
+    """
+    output = f"{len(polymer)}\nGenerated polymer chain\n"
+    output += "\n".join(polymer)
+    return output
